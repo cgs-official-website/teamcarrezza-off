@@ -20,17 +20,27 @@ const values = [
 ]
 
 const workspacePhotos = [
-  { url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1000', title: 'Collaboration Zone' },
-  { url: 'https://images.unsplash.com/photo-1497366811353-6870744d04b2?auto=format&fit=crop&q=80&w=1000', title: 'Main Operations Floor' },
-  { url: 'https://images.unsplash.com/photo-1497215728101-856f4ea42174?auto=format&fit=crop&q=80&w=1000', title: 'Engineering Hub' },
-  { url: 'https://images.unsplash.com/photo-1519389950473-47ba0277781c?auto=format&fit=crop&q=80&w=1000', title: 'Modern Workstations' },
-  { url: 'https://images.unsplash.com/photo-1521737711867-e3b97375f902?auto=format&fit=crop&q=80&w=1000', title: 'Conference Room' },
-  { url: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=1000', title: 'Team Brainstorming' },
-  { url: 'https://images.unsplash.com/photo-1531973576160-7125cd663d86?auto=format&fit=crop&q=80&w=1000', title: 'Client Meeting Lounge' },
-  { url: 'https://images.unsplash.com/photo-1504384308090-c89e91316594?auto=format&fit=crop&q=80&w=1000', title: 'Innovation Lab' },
-  { url: 'https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&q=80&w=1000', title: 'Corporate Training Wing' },
-  { url: 'https://images.unsplash.com/photo-1431540015161-0bf868a2d407?auto=format&fit=crop&q=80&w=1000', title: 'Strategic Planning Area' },
+  { url: '/assets/workspace/workspace-1.jpg', title: 'Main Operations Floor' },
+  { url: '/assets/workspace/workspace-2.jpg', title: 'Innovation Lab' },
+  { url: '/assets/workspace/workspace-3.jpg', title: 'Modern Workstations' },
+  { url: '/assets/workspace/workspace-4.jpg', title: 'Collaboration Zone' },
+  { url: '/assets/workspace/workspace-5.jpg', title: 'Engineering Hub' },
+  { url: '/assets/workspace/workspace-6.jpg', title: 'Strategic Planning Area' },
+  { url: '/assets/workspace/workspace-7.jpg', title: 'Team Brainstorming' },
+  { url: '/assets/workspace/workspace-8.jpg', title: 'Conference Room' },
+  { url: '/assets/workspace/workspace-9.jpg', title: 'Executive Suites' },
+  { url: '/assets/workspace/workspace-10.jpg', title: 'Talent Development Wing' },
+  { url: '/assets/workspace/workspace-11.jpg', title: 'Creative Studio' },
+  { url: '/assets/workspace/workspace-12.jpg', title: 'Tech Support Hub' },
+  { url: '/assets/workspace/workspace-13.jpg', title: 'Global Connectivity Lounge' },
+  { url: '/assets/workspace/workspace-14.jpg', title: 'Digital Transformation Lab' },
+  { url: '/assets/workspace/workspace-15.jpg', title: 'Agile Workspace' },
+  { url: '/assets/workspace/workspace-16.jpg', title: 'BPO Excellence Center' },
+  { url: '/assets/workspace/workspace-17.jpg', title: 'Client Briefing Room' },
+  { url: '/assets/workspace/workspace-18.jpg', title: 'Innovation Showroom' },
+  { url: '/assets/workspace/workspace-19.jpg', title: 'Corporate Training Hall' },
 ]
+
 
 const StatCard = ({ value, suffix, label }: { value: number; suffix: string; label: string }) => {
   const [ref, inView] = useInView({ triggerOnce: true })
@@ -223,18 +233,17 @@ export default function About() {
 
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-12 gap-6 auto-rows-[220px]">
             {workspacePhotos.map((photo, i) => {
-              // Bento layout logic for 10 items
-              let spanClass = "lg:col-span-3 lg:row-span-2" // Default
-              if (i === 0) spanClass = "lg:col-span-6 lg:row-span-2"
-              if (i === 1) spanClass = "lg:col-span-3 lg:row-span-1"
-              if (i === 2) spanClass = "lg:col-span-3 lg:row-span-3"
-              if (i === 3) spanClass = "lg:col-span-3 lg:row-span-2"
-              if (i === 4) spanClass = "lg:col-span-6 lg:row-span-2"
-              if (i === 5) spanClass = "lg:col-span-3 lg:row-span-1"
-              if (i === 6) spanClass = "lg:col-span-6 lg:row-span-2"
-              if (i === 7) spanClass = "lg:col-span-3 lg:row-span-1"
-              if (i === 8) spanClass = "lg:col-span-3 lg:row-span-2"
-              if (i === 9) spanClass = "lg:col-span-12 lg:row-span-1"
+              // Dynamic Bento layout logic for 19 items
+              let spanClass = "lg:col-span-3 lg:row-span-2"
+              const mod = i % 8
+              if (mod === 0) spanClass = "lg:col-span-6 lg:row-span-2"
+              else if (mod === 1) spanClass = "lg:col-span-3 lg:row-span-1"
+              else if (mod === 2) spanClass = "lg:col-span-3 lg:row-span-1"
+              else if (mod === 3) spanClass = "lg:col-span-3 lg:row-span-2"
+              else if (mod === 4) spanClass = "lg:col-span-6 lg:row-span-2"
+              else if (mod === 5) spanClass = "lg:col-span-3 lg:row-span-2"
+              else if (mod === 6) spanClass = "lg:col-span-4 lg:row-span-2"
+              else if (mod === 7) spanClass = "lg:col-span-8 lg:row-span-2"
 
               return (
                 <motion.div
@@ -243,8 +252,8 @@ export default function About() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  whileHover={{ scale: 0.985 }}
-                  className={`relative group rounded-[3.5rem] overflow-hidden border border-white/10 shadow-2xl transition-all duration-700 ${spanClass}`}
+                  whileHover={{ scale: 0.985, rotate: -0.5 }}
+                  className={`relative group rounded-[3.5rem] overflow-hidden border border-white/10 shadow-2xl transition-all duration-700 hover:border-blue-500/40 hover:shadow-[0_0_80px_rgba(59,130,246,0.15)] ${spanClass}`}
                 >
                   <img
                     src={photo.url}

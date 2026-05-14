@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { db, auth } from "../../firebase/config";
-import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc } from "firebase/firestore";
+import { collection, query, orderBy, onSnapshot, doc, updateDoc, deleteDoc, addDoc } from "firebase/firestore";
 import { signOut, onAuthStateChanged } from "firebase/auth";
 import { toast } from "react-hot-toast";
 import { 
   Search, Filter, Download, Trash2, LogOut, 
   GraduationCap, Briefcase, Mail, Phone, Linkedin, Globe,
-  CheckCircle2, Clock, XCircle, AlertCircle, X, ExternalLink, Copy, User as UserIcon
+  CheckCircle2, Clock, XCircle, AlertCircle, X, ExternalLink, Copy, User as UserIcon, MapPin
 } from "lucide-react";
 
 const AdminDashboard = () => {
@@ -18,6 +18,20 @@ const AdminDashboard = () => {
   const [roleFilter, setRoleFilter] = useState("All");
   const [user, setUser] = useState<any>(null);
   const [selectedApplicant, setSelectedApplicant] = useState<any>(null);
+  const [activeTab, setActiveTab] = useState<"applicants" | "jobs">("applicants");
+  const [jobs, setJobs] = useState<any[]>([]);
+  const [isAddingJob, setIsAddingJob] = useState(false);
+  const [newJob, setNewJob] = useState({
+    title: "",
+    dept: "",
+    location: "",
+    type: "Full-time",
+    exp: "",
+    slug: "",
+    description: "",
+    responsibilities: "",
+    requirements: ""
+  });
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,9 +57,16 @@ const AdminDashboard = () => {
       setLoading(false);
     });
 
+    const jobsQ = query(collection(db, "jobs"), orderBy("postedAt", "desc"));
+    const unsubscribeJobs = onSnapshot(jobsQ, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setJobs(data);
+    });
+
     return () => {
       unsubscribeAuth();
       unsubscribeData();
+      unsubscribeJobs();
     };
   }, [navigate]);
 
@@ -89,6 +110,46 @@ const AdminDashboard = () => {
   const handleLogout = async () => {
     await signOut(auth);
     navigate("/admin");
+  };
+
+  const handleAddJob = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const jobData = {
+        ...newJob,
+        responsibilities: newJob.responsibilities.split('\n').filter(r => r.trim()),
+        requirements: newJob.requirements.split('\n').filter(r => r.trim()),
+        postedAt: new Date(),
+        id: newJob.title.toLowerCase().replace(/\s+/g, '-') + '-' + Date.now()
+      };
+      await addDoc(collection(db, "jobs"), jobData);
+      toast.success("Job posted successfully");
+      setIsAddingJob(false);
+      setNewJob({
+        title: "",
+        dept: "",
+        location: "",
+        type: "Full-time",
+        exp: "",
+        slug: "",
+        description: "",
+        responsibilities: "",
+        requirements: ""
+      });
+    } catch (error) {
+      toast.error("Failed to post job");
+    }
+  };
+
+  const handleDeleteJob = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this job?")) {
+      try {
+        await deleteDoc(doc(db, "jobs", id));
+        toast.success("Job deleted");
+      } catch (error) {
+        toast.error("Failed to delete job");
+      }
+    }
   };
 
   const copyToClipboard = (e: React.MouseEvent, text: string, label: string) => {
@@ -168,37 +229,63 @@ const AdminDashboard = () => {
           ))}
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 mb-8 md:mb-12 bg-white/[0.02] p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-white/5">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-2">Applicants Intelligence</h1>
-            <p className="text-sm md:text-base text-gray-400 font-medium">Monitoring {filteredApplicants.length} deployment requests.</p>
-          </div>
-
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-            <div className="relative group flex-grow sm:flex-grow-0">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search Identity..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="bg-[#0B1120] border border-white/10 rounded-xl md:rounded-2xl pl-12 pr-6 py-3 text-sm text-white focus:border-blue-500/50 outline-none transition-all w-full sm:w-[250px] md:w-[350px] shadow-inner"
-              />
-            </div>
-
-            <div className="relative group">
-              <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size={18} />
-              <select 
-                value={roleFilter} 
-                onChange={(e) => setRoleFilter(e.target.value)}
-                className="bg-[#0B1120] border border-white/10 rounded-xl md:rounded-2xl pl-12 pr-10 py-3 text-sm text-white focus:border-blue-500/50 outline-none transition-all appearance-none w-full sm:min-w-[180px] shadow-inner"
-              >
-                {roles.map(role => <option key={role} value={role} className="bg-[#0B1120]">{role}</option>)}
-              </select>
-            </div>
-          </div>
+        {/* Tabs */}
+        <div className="flex gap-4 mb-8">
+          <button 
+            onClick={() => setActiveTab("applicants")}
+            className={`px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all ${
+              activeTab === "applicants" 
+              ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20" 
+              : "glass text-gray-500 hover:text-white border border-white/10"
+            }`}
+          >
+            Applicant Pipeline
+          </button>
+          <button 
+            onClick={() => setActiveTab("jobs")}
+            className={`px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs transition-all ${
+              activeTab === "jobs" 
+              ? "bg-blue-500 text-white shadow-lg shadow-blue-500/20" 
+              : "glass text-gray-500 hover:text-white border border-white/10"
+            }`}
+          >
+            Mission Deployment
+          </button>
         </div>
+
+        {activeTab === "applicants" ? (
+          <>
+            {/* Controls */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 md:gap-8 mb-8 md:mb-12 bg-white/[0.02] p-6 md:p-8 rounded-[2rem] md:rounded-[3rem] border border-white/5">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-2">Applicants Intelligence</h1>
+                <p className="text-sm md:text-base text-gray-400 font-medium">Monitoring {filteredApplicants.length} deployment requests.</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                <div className="relative group flex-grow sm:flex-grow-0">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="Search Identity..." 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="bg-[#0B1120] border border-white/10 rounded-xl md:rounded-2xl pl-12 pr-6 py-3 text-sm text-white focus:border-blue-500/50 outline-none transition-all w-full sm:w-[250px] md:w-[350px] shadow-inner"
+                  />
+                </div>
+
+                <div className="relative group">
+                  <Filter className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-400 transition-colors" size={18} />
+                  <select 
+                    value={roleFilter} 
+                    onChange={(e) => setRoleFilter(e.target.value)}
+                    className="bg-[#0B1120] border border-white/10 rounded-xl md:rounded-2xl pl-12 pr-10 py-3 text-sm text-white focus:border-blue-500/50 outline-none transition-all appearance-none w-full sm:min-w-[180px] shadow-inner"
+                  >
+                    {roles.map(role => <option key={role} value={role} className="bg-[#0B1120]">{role}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
 
         {/* Column-wise Table View (Desktop) / Card View (Mobile) */}
         {filteredApplicants.length === 0 ? (
@@ -353,6 +440,158 @@ const AdminDashboard = () => {
               ))}
             </div>
           </>
+        )}
+      </>
+    ) : (
+      <div className="space-y-8">
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tighter mb-2">Mission Deployment</h1>
+                <p className="text-sm md:text-base text-gray-400 font-medium">Manage active technical missions and global openings.</p>
+              </div>
+              <button 
+                onClick={() => setIsAddingJob(true)}
+                className="bg-blue-500 text-white px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-xs flex items-center gap-3 hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20"
+              >
+                Deploy New Mission
+              </button>
+            </div>
+
+            {isAddingJob && (
+              <div className="glass rounded-[2.5rem] p-8 md:p-12 border border-white/10 mb-12 animate-in fade-in slide-in-from-top-4 duration-500">
+                <div className="flex items-center justify-between mb-10">
+                  <h3 className="text-xl font-black text-white uppercase tracking-tighter">Mission Configuration</h3>
+                  <button onClick={() => setIsAddingJob(false)} className="text-gray-500 hover:text-white"><X size={24} /></button>
+                </div>
+                <form onSubmit={handleAddJob} className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Mission Title</label>
+                    <input 
+                      required
+                      value={newJob.title}
+                      onChange={e => setNewJob({...newJob, title: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50" 
+                      placeholder="e.g. Senior Systems Architect" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Department</label>
+                    <input 
+                      required
+                      value={newJob.dept}
+                      onChange={e => setNewJob({...newJob, dept: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50" 
+                      placeholder="e.g. Engineering Operations" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Location</label>
+                    <input 
+                      required
+                      value={newJob.location}
+                      onChange={e => setNewJob({...newJob, location: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50" 
+                      placeholder="e.g. Remote / Global" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Job Type</label>
+                    <select 
+                      value={newJob.type}
+                      onChange={e => setNewJob({...newJob, type: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50 appearance-none"
+                    >
+                      <option value="Full-time" className="bg-[#0B1120]">Full-time</option>
+                      <option value="Part-time" className="bg-[#0B1120]">Part-time</option>
+                      <option value="Contract" className="bg-[#0B1120]">Contract</option>
+                      <option value="Internship" className="bg-[#0B1120]">Internship</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Exp Requirement</label>
+                    <input 
+                      required
+                      value={newJob.exp}
+                      onChange={e => setNewJob({...newJob, exp: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50" 
+                      placeholder="e.g. 5+ Years" 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Brief Catchphrase</label>
+                    <input 
+                      required
+                      value={newJob.slug}
+                      onChange={e => setNewJob({...newJob, slug: e.target.value})}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50" 
+                      placeholder="e.g. Architecting global scale systems." 
+                    />
+                  </div>
+                  <div className="md:col-span-2 space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Mission Description</label>
+                    <textarea 
+                      required
+                      value={newJob.description}
+                      onChange={e => setNewJob({...newJob, description: e.target.value})}
+                      rows={4}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50 resize-none" 
+                      placeholder="Detailed mission brief..." 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Strategic Responsibilities (One per line)</label>
+                    <textarea 
+                      required
+                      value={newJob.responsibilities}
+                      onChange={e => setNewJob({...newJob, responsibilities: e.target.value})}
+                      rows={6}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50 resize-none" 
+                      placeholder="Handle core infrastructure..." 
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Required Expertise (One per line)</label>
+                    <textarea 
+                      required
+                      value={newJob.requirements}
+                      onChange={e => setNewJob({...newJob, requirements: e.target.value})}
+                      rows={6}
+                      className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-blue-500/50 resize-none" 
+                      placeholder="Proficiency in Rust..." 
+                    />
+                  </div>
+                  <div className="md:col-span-2 pt-6">
+                    <button type="submit" className="w-full bg-blue-500 text-white py-6 rounded-2xl font-black uppercase tracking-[0.2em] shadow-xl shadow-blue-500/20 hover:bg-blue-600 transition-all">Execute Mission Deployment</button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {jobs.map(job => (
+                <div key={job.id} className="glass rounded-[2rem] p-8 border border-white/10 hover:border-blue-500/30 transition-all group relative">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400">
+                      <Briefcase size={24} />
+                    </div>
+                    <button onClick={() => handleDeleteJob(job.id)} className="p-2 text-red-500/50 hover:text-red-500 transition-colors"><Trash2 size={18} /></button>
+                  </div>
+                  <h3 className="text-xl font-black text-white tracking-tighter mb-2">{job.title}</h3>
+                  <p className="text-xs text-blue-500 font-bold uppercase tracking-widest mb-6">{job.dept}</p>
+                  <div className="flex items-center gap-4 text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                    <span className="flex items-center gap-1.5"><MapPin size={12} /> {job.location}</span>
+                    <span className="flex items-center gap-1.5"><Clock size={12} /> {job.type}</span>
+                  </div>
+                </div>
+              ))}
+              {jobs.length === 0 && !isAddingJob && (
+                <div className="md:col-span-2 lg:col-span-3 glass rounded-[2rem] p-16 border border-dashed border-white/10 text-center">
+                  <AlertCircle className="text-gray-600 mx-auto mb-4" size={32} />
+                  <p className="text-gray-500 font-black uppercase tracking-widest text-xs">No active missions deployed via dashboard.</p>
+                </div>
+              )}
+            </div>
+          </div>
         )}
       </main>
 

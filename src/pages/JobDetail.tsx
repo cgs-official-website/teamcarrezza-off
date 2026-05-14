@@ -13,11 +13,48 @@ import {
   Zap,
   ChevronRight
 } from 'lucide-react';
-import { openings } from '../data/jobs';
+import { openings as staticOpenings, JobOpening } from '../data/jobs';
+import { db } from '../firebase/config';
+import { collection, query, where, getDocs } from 'firebase/firestore';
 
 const JobDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const job = openings.find(j => j.id === id);
+  const [job, setJob] = React.useState<JobOpening | null>(null);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchJob = async () => {
+      // 1. Check static openings
+      const staticJob = staticOpenings.find(j => j.id === id);
+      if (staticJob) {
+        setJob(staticJob);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Check Firestore
+      try {
+        const q = query(collection(db, "jobs"), where("id", "==", id));
+        const snapshot = await getDocs(q);
+        if (!snapshot.empty) {
+          setJob(snapshot.docs[0].data() as JobOpening);
+        }
+      } catch (error) {
+        console.error("Error fetching job:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchJob();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#0B1120] flex items-center justify-center">
+        <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+      </div>
+    );
+  }
 
   if (!job) {
     return <Navigate to="/careers" replace />;

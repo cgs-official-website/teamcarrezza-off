@@ -1,9 +1,12 @@
+import React from 'react'
 import { motion } from 'framer-motion'
 import { Link } from 'react-router-dom'
 import { ArrowRight, MapPin, Clock, Briefcase, Heart, Zap, Globe, Shield, Award, Users } from 'lucide-react'
 import { PageHeader } from '../components/ui/Section'
 
-import { openings } from '../data/jobs'
+import { openings as staticOpenings, JobOpening } from '../data/jobs'
+import { db } from '../firebase/config'
+import { collection, query, orderBy, getDocs } from 'firebase/firestore'
 
 const perks = [
   { icon: Globe, title: 'Remote-First', desc: 'Work from anywhere in the world with flexible hours.' },
@@ -15,6 +18,24 @@ const perks = [
 ]
 
 export default function Careers() {
+  const [dynamicOpenings, setDynamicOpenings] = React.useState<JobOpening[]>([]);
+
+  React.useEffect(() => {
+    const fetchJobs = async () => {
+      try {
+        const q = query(collection(db, "jobs"), orderBy("postedAt", "desc"));
+        const snapshot = await getDocs(q);
+        const jobs = snapshot.docs.map(doc => ({ ...doc.data() } as JobOpening));
+        setDynamicOpenings(jobs);
+      } catch (error) {
+        console.error("Error fetching jobs:", error);
+      }
+    };
+    fetchJobs();
+  }, []);
+
+  const allOpenings = [...dynamicOpenings, ...staticOpenings];
+
   return (
     <div>
       <PageHeader
@@ -56,7 +77,7 @@ export default function Careers() {
             <p className="text-gray-400 text-2xl max-w-3xl mx-auto leading-relaxed font-medium">Ready to architect the future of global commerce? Select your mission and join our elite engineering and operations units.</p>
           </div>
           <div className="space-y-8">
-            {openings.map((job, i) => (
+            {allOpenings.map((job, i) => (
               <motion.div
                 key={job.title}
                 initial={{ opacity: 0, y: 30 }}

@@ -38,7 +38,7 @@ export default async function handler(req, res) {
     const extension = resumeFile.originalFilename.split('.').pop();
     const fileMetadata = {
       name: `${candidateName}_Resume.${extension}`,
-      parents: [process.env.GOOGLE_DRIVE_FOLDER_ID],
+      parents: [process.env.GOOGLE_DRIVE_RESUMES_FOLDER_ID || process.env.GOOGLE_DRIVE_FOLDER_ID],
     };
 
     const media = {

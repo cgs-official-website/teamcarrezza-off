@@ -204,7 +204,7 @@ export default function Footer() {
                     <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-blue-500/10 transition-all shadow-inner">
                       <Mail size={20} className="text-blue-500/80 group-hover:text-blue-400" />
                     </div>
-                    <span className="text-base font-bold tracking-tight">info@carrezzaglobal.com</span>
+                    <span className="text-base font-bold tracking-tight">info@teamcarrezza.com</span>
                   </a>
                 </li>
                 <li>
@@ -212,7 +212,7 @@ export default function Footer() {
                     <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center group-hover:bg-blue-500/10 transition-all shadow-inner">
                       <Phone size={20} className="text-blue-500/80 group-hover:text-blue-400" />
                     </div>
-                    <span className="text-base font-bold tracking-tight">+91 98765 43210</span>
+                    <span className="text-base font-bold tracking-tight">+91 91508 86338</span>
                   </a>
                 </li>
                 <li>

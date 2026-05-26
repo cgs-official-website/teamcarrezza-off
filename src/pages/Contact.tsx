@@ -5,7 +5,7 @@ import toast from 'react-hot-toast'
 import { PageHeader } from '../components/ui/Section'
 
 const offices = [
-  { city: 'Perundurai', country: 'India', email: 'india@carrezzaglobal.com', phone: '+91 98765 43210', flag: '🇮🇳' },
+  { city: 'Perundurai', country: 'India', email: 'info@teamcarrezza.com', phone: '+91 91508 86338', flag: '🇮🇳' },
   // { city: 'New York', country: 'USA', email: 'usa@carrezzaglobal.com', phone: '+1 (234) 567-890', flag: '🇺🇸' },
   // { city: 'London', country: 'UK', email: 'uk@carrezzaglobal.com', phone: '+44 20 1234 5678', flag: '🇬🇧' },
   // { city: 'Dubai', country: 'UAE', email: 'uae@carrezzaglobal.com', phone: '+971 4 123 4567', flag: '🇦🇪' },
